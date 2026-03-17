@@ -1,0 +1,102 @@
+openapi: 3.1.0
+info:
+  title: Playground.au Bambu Connector API
+  version: 0.1.0
+servers:
+  - url: http://localhost:8081
+security:
+  - ServiceAuth: []
+paths:
+  /health/live:
+    get:
+      security: []
+      summary: Liveness probe
+      responses:
+        "200":
+          description: Live
+  /health/ready:
+    get:
+      security: []
+      summary: Readiness probe
+      responses:
+        "200":
+          description: Ready
+        "503":
+          description: Not ready
+  /api/integration/jobs:
+    post:
+      summary: Submit order item print job
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [printingWebOrderId, printingWebOrderItemId, printerId]
+              properties:
+                printingWebOrderId: { type: string }
+                printingWebOrderItemId: { type: string }
+                printerId: { type: string }
+                reason: { type: string }
+                notes: { type: string }
+      responses:
+        "200":
+          description: Accepted
+  /api/integration/history/{printingWebOrderItemId}:
+    get:
+      summary: Get print-attempt history for order item
+      parameters:
+        - in: path
+          name: printingWebOrderItemId
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: History payload
+  /api/integration/insights/stock-signals:
+    get:
+      summary: Get stock signals
+      responses:
+        "200":
+          description: Stock signals payload
+  /api/integration/insights/power-estimate:
+    post:
+      summary: Estimate power usage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [durationMinutes]
+              properties:
+                durationMinutes: { type: number }
+                averageWattage: { type: number }
+      responses:
+        "200":
+          description: Power estimate payload
+  /api/integration/timelapses:
+    post:
+      summary: Create timelapse asset for attempt
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [printAttemptId]
+              properties:
+                printAttemptId: { type: string }
+                sourcePath: { type: string }
+                isSuccessful: { type: boolean }
+                approved: { type: boolean }
+      responses:
+        "200":
+          description: Timelapse asset created
+
+components:
+  securitySchemes:
+    ServiceAuth:
+      type: apiKey
+      in: header
+      name: x-service-auth

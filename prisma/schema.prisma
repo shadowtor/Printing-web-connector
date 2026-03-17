@@ -1,0 +1,180 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  schemas  = ["connector"]
+}
+
+enum PrinterState {
+  idle
+  queued
+  printing
+  paused
+  error
+  completed
+  offline
+
+  @@schema("connector")
+}
+
+enum AttemptStatus {
+  queued
+  starting
+  printing
+  completed
+  failed
+  cancelled
+  interrupted
+
+  @@schema("connector")
+}
+
+model Printer {
+  id               String                @id @default(cuid())
+  externalId       String?               @unique
+  name             String
+  model            String
+  serial           String                @unique
+  host             String
+  amsPresent       Boolean               @default(false)
+  nozzleConfig     String?
+  firmwareVersion  String?
+  normalizedState  PrinterState          @default(idle)
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  statusHistory    PrinterStatusHistory[]
+  printAttempts    PrintAttempt[]
+  filamentStocks   FilamentStock[]
+
+  @@schema("connector")
+}
+
+model PrinterStatusHistory {
+  id         String       @id @default(cuid())
+  printerId  String
+  state      PrinterState
+  reason     String?
+  createdAt  DateTime     @default(now())
+  printer    Printer      @relation(fields: [printerId], references: [id], onDelete: Cascade)
+
+  @@index([printerId, createdAt])
+  @@schema("connector")
+}
+
+model OrderItemLink {
+  id                   String         @id @default(cuid())
+  printingWebOrderId   String
+  printingWebOrderItemId String       @unique
+  status               String
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  printAttempts        PrintAttempt[]
+
+  @@schema("connector")
+}
+
+model PrintAttempt {
+  id               String        @id @default(cuid())
+  orderItemLinkId  String
+  printerId        String
+  attemptNumber    Int
+  status           AttemptStatus @default(queued)
+  reason           String?
+  notes            String?
+  materialUsageG   Float?
+  powerUsageKwh    Float?
+  createdAt        DateTime      @default(now())
+  startedAt        DateTime?
+  completedAt      DateTime?
+  updatedAt        DateTime      @updatedAt
+  orderItemLink    OrderItemLink @relation(fields: [orderItemLinkId], references: [id], onDelete: Cascade)
+  printer          Printer       @relation(fields: [printerId], references: [id], onDelete: Restrict)
+  timelapseAssets  TimelapseAsset[]
+  auditEvents      AuditEvent[]
+
+  @@unique([orderItemLinkId, attemptNumber])
+  @@index([printerId, status])
+  @@schema("connector")
+}
+
+model FilamentStock {
+  id                 String    @id @default(cuid())
+  printerId          String?
+  materialType       String
+  color              String?
+  amsSlot            Int?
+  estimatedRemaining Float
+  lowStockThreshold  Float
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  printer            Printer?  @relation(fields: [printerId], references: [id], onDelete: SetNull)
+  stockEvents        StockEvent[]
+
+  @@index([printerId, materialType])
+  @@schema("connector")
+}
+
+model StockEvent {
+  id              String   @id @default(cuid())
+  filamentStockId String
+  eventType       String
+  delta           Float?
+  details         String?
+  createdAt       DateTime @default(now())
+  filamentStock   FilamentStock @relation(fields: [filamentStockId], references: [id], onDelete: Cascade)
+
+  @@schema("connector")
+}
+
+model RestockRecommendation {
+  id               String   @id @default(cuid())
+  materialType     String
+  recommendedGrams Float
+  rationale        String?
+  createdAt        DateTime @default(now())
+
+  @@schema("connector")
+}
+
+model TimelapseAsset {
+  id                 String   @id @default(cuid())
+  printAttemptId     String
+  sourcePath         String?
+  youtubeVideoId     String?
+  youtubeUrl         String?
+  internalVisible    Boolean  @default(true)
+  customerVisible    Boolean  @default(false)
+  uploadStatus       String   @default("pending")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  printAttempt       PrintAttempt @relation(fields: [printAttemptId], references: [id], onDelete: Cascade)
+
+  @@schema("connector")
+}
+
+model AuditEvent {
+  id              String   @id @default(cuid())
+  printAttemptId  String?
+  actorType       String
+  actorId         String?
+  eventType       String
+  payloadSummary  String?
+  createdAt       DateTime @default(now())
+  printAttempt    PrintAttempt? @relation(fields: [printAttemptId], references: [id], onDelete: SetNull)
+
+  @@index([eventType, createdAt])
+  @@schema("connector")
+}
+
+model SyncEvent {
+  id             String   @id @default(cuid())
+  direction      String
+  operation      String
+  status         String
+  details        String?
+  createdAt      DateTime @default(now())
+
+  @@schema("connector")
+}
