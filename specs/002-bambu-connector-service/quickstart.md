@@ -22,6 +22,8 @@
 
 **SQLite outbox**: When writes to remote Postgres or sync to Printing-web fail, the connector appends to a local SQLite outbox inside the container and a background job replays them when the remote is available again. No extra configuration is required; it is used automatically.
 
+**Printer on host LAN**: The default Compose setup uses a bridge network; containers cannot reach devices on the host’s LAN (e.g. a Bambu printer at 192.168.50.x). To reach the printer from the connector: on **Linux**, add `-f docker-compose.local-host.yml` so the API runs with host networking; on **Windows/Mac** (Docker Desktop), run the connector on the host instead: `npm run dev` (with `.env` and local Postgres or a tunnel to Postgres).
+
 ## Steps
 
 1. **Clone and configure env**

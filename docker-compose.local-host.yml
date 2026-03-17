@@ -1,0 +1,10 @@
+# Optional: use with docker-compose.yml + docker-compose.local.yml when the printer is on the host LAN
+# and the connector must reach it (Linux only).
+# Run: docker compose -f docker-compose.yml -f docker-compose.local.yml -f docker-compose.local-host.yml up -d
+# Start connector-db first (without this file), then start connector-api with this file so it uses host network.
+# With network_mode: host, the API runs on the host network so use localhost for Postgres (host-published port).
+services:
+  connector-api:
+    network_mode: host
+    environment:
+      DATABASE_URL: postgresql://connector:connector@localhost:5434/bambu_connector

@@ -1,7 +1,8 @@
 # Local testing: use with the base compose file to add a local Postgres and wire the API to it.
 # Run: docker compose -f docker-compose.yml -f docker-compose.local.yml up -d
-# Start connector-db first if needed: docker compose -f docker-compose.yml -f docker-compose.local.yml up -d connector-db
-# Then: docker compose -f docker-compose.yml -f docker-compose.local.yml up -d connector-api
+#
+# To reach a printer on the host LAN (Linux), add: -f docker-compose.local-host.yml
+# On Windows/Mac Docker Desktop, run the connector on the host for LAN: npm run dev
 services:
   connector-db:
     image: postgres:17-alpine
@@ -26,7 +27,8 @@ services:
       connector-db:
         condition: service_healthy
     environment:
-      DATABASE_URL: ${DATABASE_URL:-postgresql://connector:connector@connector-db:5432/bambu_connector}
+      # Force in-network DB URL so the container always uses connector-db (not host localhost)
+      DATABASE_URL: postgresql://connector:connector@connector-db:5432/bambu_connector
 
 volumes:
   connector_db_data:
