@@ -27,9 +27,7 @@ Core responsibilities:
 4. Start service:
    - `npm run dev`
 
-Or run Docker stack:
-
-- `docker compose up --build -d`
+Or run Docker stack: **production** `docker compose up --build -d` (set `DATABASE_URL`); **local testing** `docker compose -f docker-compose.yml -f docker-compose.local.yml up --build -d`.
 
 ## Commands
 

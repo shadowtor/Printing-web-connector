@@ -1,0 +1,32 @@
+# Local testing: use with the base compose file to add a local Postgres and wire the API to it.
+# Run: docker compose -f docker-compose.yml -f docker-compose.local.yml up -d
+# Start connector-db first if needed: docker compose -f docker-compose.yml -f docker-compose.local.yml up -d connector-db
+# Then: docker compose -f docker-compose.yml -f docker-compose.local.yml up -d connector-api
+services:
+  connector-db:
+    image: postgres:17-alpine
+    container_name: bambu-connector-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-bambu_connector}
+      POSTGRES_USER: ${POSTGRES_USER:-connector}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-connector}
+    ports:
+      - "${POSTGRES_PORT:-5434}:5432"
+    volumes:
+      - connector_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-connector} -d ${POSTGRES_DB:-bambu_connector}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  connector-api:
+    depends_on:
+      connector-db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://connector:connector@connector-db:5432/bambu_connector}
+
+volumes:
+  connector_db_data:

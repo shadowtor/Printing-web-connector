@@ -1,31 +1,9 @@
 # Production: set DATABASE_URL to the site's remote Postgres and run:
 #   docker compose up -d
 # Only connector-api runs; no local Postgres.
-#
-# Local dev with local Postgres:
-#   docker compose --profile local-db up -d
-# Starts connector-db and connector-api; DATABASE_URL defaults to connector-db.
+# For local testing with a local Postgres, use:
+#   docker compose -f docker-compose.yml -f docker-compose.local.yml up -d
 services:
-  connector-db:
-    image: postgres:17-alpine
-    container_name: bambu-connector-db
-    restart: unless-stopped
-    profiles:
-      - local-db
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-bambu_connector}
-      POSTGRES_USER: ${POSTGRES_USER:-connector}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-connector}
-    ports:
-      - "${POSTGRES_PORT:-5434}:5432"
-    volumes:
-      - connector_db_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-connector} -d ${POSTGRES_DB:-bambu_connector}"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-
   connector-api:
     build:
       context: .
@@ -37,12 +15,6 @@ services:
     environment:
       PORT: ${PORT:-8081}
       HOST: 0.0.0.0
-      DATABASE_URL: ${DATABASE_URL:-postgresql://connector:connector@connector-db:5432/bambu_connector}
+      DATABASE_URL: ${DATABASE_URL}
     ports:
       - "${PORT:-8081}:8081"
-    # When using --profile local-db, start db first so API can connect:
-    #   docker compose --profile local-db up -d connector-db
-    #   docker compose --profile local-db up -d connector-api
-
-volumes:
-  connector_db_data:

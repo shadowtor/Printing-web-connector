@@ -6,6 +6,10 @@
 - Connector database and audit logs
 - Timelapse upload path (YouTube)
 
+## Auth and unauthenticated endpoints
+- Only `/health/live` and `/health/ready` are unauthenticated (for orchestrators and load balancers). `/metrics` is unauthenticated unless `METRICS_AUTH_SECRET` is set; when set, clients must send `Authorization: Bearer <secret>`.
+- All other routes require authentication: integration routes use `x-service-auth` (service shared secret), admin routes use `x-admin-auth` (admin secret). Restrict health and metrics to trusted networks in production (e.g. only from the mesh or monitoring).
+
 ## Threats and Mitigations
 
 ### Spoofing
@@ -31,3 +35,7 @@
 ### Elevation of Privilege
 - Threat: Integration clients access admin-only capabilities.
 - Mitigation: Separate middleware for admin and service routes, no implicit trust between route groups.
+
+### Secure communications
+- **Inbound**: Production deployment via Cloudflare Tunnel (cloudflared) provides HTTPS at the edge; the connector listens on HTTP internally. See the runbook "Production with Cloudflare Tunnel" section and linked Cloudflare docs.
+- **Outbound**: When the connector calls Printing-web (`PRINTING_WEB_BASE_URL`), use `https://` in production when available. Service and admin auth (shared secrets) protect request integrity and authenticity.

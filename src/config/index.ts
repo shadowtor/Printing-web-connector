@@ -7,7 +7,9 @@ const envSchema = z.object({
   DATABASE_URL: z.string().url(),
   PRINTING_WEB_BASE_URL: z.string().url(),
   SERVICE_AUTH_SHARED_SECRET: z.string().min(16),
+  ADMIN_AUTH_SECRET: z.string().min(16),
   BAMBU_PRINTERS_JSON: z.string().default("[]"),
+  METRICS_AUTH_SECRET: z.string().optional(),
   YOUTUBE_UPLOAD_ENABLED: z
     .string()
     .default("false")

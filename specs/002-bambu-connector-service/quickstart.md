@@ -11,15 +11,14 @@
 
 ## Two run modes
 
-1. **Local dev with optional local Postgres**
+1. **Local testing (with local Postgres)**
    - Use when developing without the site’s remote Postgres. From the repo root:
-     - `docker compose --profile local-db up --build -d`
-   - This starts the `connector-db` (Postgres) and `connector-api` services. Start the DB first so the API can connect: e.g. `docker compose --profile local-db up -d connector-db`, then `docker compose --profile local-db up -d connector-api`.
-   - `DATABASE_URL` defaults to `postgresql://connector:connector@connector-db:5432/bambu_connector`.
+     - `docker compose -f docker-compose.yml -f docker-compose.local.yml up --build -d`
+   - This starts `connector-db` (Postgres) and `connector-api`. The local override wires the API to the local DB; `DATABASE_URL` defaults to `postgresql://connector:connector@connector-db:5432/bambu_connector` when using the local file.
 
-2. **Production / remote Postgres**
+2. **Production (remote Postgres)**
    - Use when the site has a remote Postgres (same server as Printing-web or a dedicated DB). Set `DATABASE_URL` in `.env` to that connection string.
-   - Run only the API: `docker compose up --build -d`. Do **not** start the `connector-db` service; the connector uses the remote database. All connector tables live in the **`connector`** schema.
+   - Run only the API: `docker compose up --build -d`. Only `connector-api` runs; no local Postgres. All connector tables live in the **`connector`** schema.
 
 **SQLite outbox**: When writes to remote Postgres or sync to Printing-web fail, the connector appends to a local SQLite outbox inside the container and a background job replays them when the remote is available again. No extra configuration is required; it is used automatically.
 
@@ -27,10 +26,10 @@
 
 1. **Clone and configure env**
    - Copy `.env.example` to `.env` in the connector repo.
-   - Fill in `DATABASE_URL` (remote Postgres or leave default for local-db profile), Bambu LAN settings, `PRINTING_WEB_BASE_URL`, and authentication secrets.
+   - Fill in `DATABASE_URL` (remote Postgres for production; when using docker-compose.local.yml a default is provided), Bambu LAN settings, `PRINTING_WEB_BASE_URL`, and authentication secrets.
 
 2. **Start services via Docker Compose**
-   - **Local dev**: `docker compose --profile local-db up --build -d` (start `connector-db` first if needed).
+   - **Local testing**: `docker compose -f docker-compose.yml -f docker-compose.local.yml up --build -d`.
    - **Production**: Set `DATABASE_URL` to remote Postgres, then `docker compose up --build -d`.
 
 3. **Run migrations**
